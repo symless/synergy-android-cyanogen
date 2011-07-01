@@ -47,8 +47,16 @@ and debug the project in eclipse.
    
     #./build_jni.sh <NDK Base>
 
+then just build the whole project in eclipse.
+
 Running 
----------------------------------------------------------------------
+-------------------------------------------------------------------------
+Reminder: you should build the jni source first and chmod 666 /dev/uinput
+
+Then you can:
+1. just run the project in eclipse or 
+2. install the PROJECT_PATH/bin/Synergy.apk to emulator/device. 
+      #adb install PROJECT_PATH/bin/Synergy.apk
 
 TODOs
 ----------------------------------------------------------------------
