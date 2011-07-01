@@ -1,0 +1,65 @@
+This directory contains the SynergyAndroid project source code.
+
+Introduction
+-----------------------------------------------------------------------
+SynergyAndroid is a port of the synergy client to the Android platform. 
+See http://synergy-foss.org for detail. Currently in the planning stage.
+New developers are very welcome to join in.
+
+Pre-requirements
+-----------------------------------------------------------------------
+We use the uinput module for user space input driver, so you must have
+a modded Android with access to /dev/uinput (Like Cyanogen). That means
+your android must have /dev/uinput module and this file can be RW by app.
+
+You can follow blow steps to set a custom android emulator for testing:
+
+    1. Clone the android kernel source from android.git.kernel.org
+        #git clone git://android.git.kernel.org/kernel/common.git
+    2. Check out the emulator branch
+        #git checkout -t origin/android-goldfish-2.6.29 -b goldfish
+    3. Generate the kernel configuration for emulator
+        #make ARCH=arm goldfish_defconfig
+    or get a config copy from a exist emulator rom.
+        #adb pull /proc/config.gz
+    4. Edit the .config file, make sure 
+        CONFIG_INPUT_UINPUT=y
+    5. Compile the kernel using cross toolchain (you can get prebuilt 
+       cross toolchain from android source repo or just
+        #git clone git://android.git.kernel.org/platform/prebuilt.git
+       all platform cross chain are there.)
+        #make ARCH=arm CROSS_COMPILE=prebuilt/YOUR_PLATFORM/toolchain/arm-eabi-4.2.1/bin/arm-eabi-
+        
+    6. Now, the kernel built is in the arch/arm/boot/ folder. 
+       You can start the emulator with this kernel
+        #emulator -avd YOUR_AVD -kernel ANDROID_KERNEL_PATH/arch/arm/boot/zImage 
+       
+    7. At last, you should make sure your app can read and write /dev/uinput
+        #adb shell chmod 660 /dev/uinput
+       
+    8. Now, you can build the project and test it.
+ 
+Building the project
+-----------------------------------------------------------------------
+SynergyAndroid use the jni to access the /dev/uinput module, so you must
+compile the jni source by NDK firstly. And then you can directly build 
+and debug the project in eclipse.
+   
+    #./build_jni.sh <NDK Base>
+
+Running 
+---------------------------------------------------------------------
+
+TODOs
+----------------------------------------------------------------------
+Client reconnect
+Proper handling of shift, alt, caps lock... etc.  
+
+Options to Implement
+-------------------------
+Logging level
+Port number
+Retry interval ?
+
+Key Translation
+------------------------

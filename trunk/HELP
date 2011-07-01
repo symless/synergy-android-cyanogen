@@ -1,0 +1,6 @@
+- It would be nice if we found a way of injecting keystrokes without using /dev/input/uinput
+  but I doubt that'll be possible a change to the API
+
+- A way to determine the current mouse coordinates
+
+
