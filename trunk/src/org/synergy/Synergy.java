@@ -44,6 +44,7 @@ public class Synergy extends Activity {
 	
 	private final static String PROP_clientName = "clientName";
 	private final static String PROP_serverHost = "serverHost";
+	private final static String PROP_deviceName = "deviceName";
 	
 	private Thread mainLoopThread = null;
 	
@@ -67,6 +68,8 @@ public class Synergy extends Activity {
 				mainLoopThread = null;
 			} catch (Exception e) {
 				e.printStackTrace ();
+			} finally {
+				Injection.stop();
 			}
 		}
 	}
@@ -100,7 +103,7 @@ public class Synergy extends Activity {
         Log.debug ("Client starting....");
 
         try {
-			Injection.startInjection ();
+			Injection.setPermissionsForInputDevice();
 		} catch (Exception e) {
 			// TODO handle exception
 		}
@@ -110,17 +113,21 @@ public class Synergy extends Activity {
     	
     	String clientName = ((EditText) findViewById (R.id.clientNameEditText)).getText().toString();
     	String ipAddress = ((EditText) findViewById (R.id.serverHostEditText)).getText().toString();
+    	String deviceName = ((EditText) findViewById(R.id.inputDeviceEditText)).getText().toString();
     	
     	SharedPreferences preferences = getPreferences(MODE_PRIVATE);
     	SharedPreferences.Editor preferencesEditor = preferences.edit();
     	preferencesEditor.putString(PROP_clientName, clientName);
     	preferencesEditor.putString(PROP_serverHost, ipAddress);
+    	preferencesEditor.putString(PROP_deviceName, deviceName);
     	preferencesEditor.commit();
     	
         try {
         	SocketFactoryInterface socketFactory = new TCPSocketFactory();
        	   	NetworkAddress serverAddress = new NetworkAddress (ipAddress, 24800);
         	serverAddress.resolve ();
+
+        	Injection.startInjection(deviceName);
 
         	BasicScreen basicScreen = new BasicScreen();
         	

@@ -13,7 +13,7 @@ public final class Injection {
 	/**
 	 * Functions imported from synergy-jni library
 	 */
-	public static final native void start ();
+	public static final native void start (String deviceName);
 	public static native void stop ();
 	public static native void keydown (int key, int mask);
 	public static native void keyup (int key, int mask);
@@ -24,7 +24,7 @@ public final class Injection {
 	
 	private Injection () { }
 	
-	public static void startInjection () {
+	public static void setPermissionsForInputDevice () {
 		Log.debug ("Starting injection");
 		try {
 			Process process = Runtime.getRuntime ().exec ("su");
@@ -34,13 +34,15 @@ public final class Injection {
 			dout.close ();
 			process.waitFor ();
 			Log.debug ("Access to /dev/uinput granted");
-
-			start ();
 		} catch (Exception e) {
 			e.printStackTrace ();
 		}
 	}
-	
+
+	public static void startInjection (String deviceName) {
+		start (deviceName);
+	}
+
 	public static void stopInjection () {
 		stop ();
 	}

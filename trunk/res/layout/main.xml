@@ -27,10 +27,23 @@
               android:text="igsarmewmactck"
               android:layout_below="@id/serverHostTextView"
               android:id="@+id/serverHostEditText"/>
-  
+
+    <TextView android:layout_width="fill_parent" 
+              android:layout_height="wrap_content" 
+              android:text="Input device name:"
+              android:layout_below="@+id/serverHostEditText"
+              android:id="@+id/inputDeviceTextView"/>
+
+    <EditText android:layout_width="fill_parent" 
+              android:layout_height="wrap_content" 
+              android:background="@android:drawable/editbox_background"
+              android:text="touchscreen"
+              android:layout_below="@+id/inputDeviceTextView"
+              android:id="@+id/inputDeviceEditText"/>
+
     <Button android:layout_width="wrap_content" 
             android:layout_height="wrap_content"
-            android:layout_below="@id/serverHostEditText"
+            android:layout_below="@+id/inputDeviceEditText"
             android:layout_alignParentRight="true"
             android:text="Connect" 
             android:id="@+id/connectButton"/>
