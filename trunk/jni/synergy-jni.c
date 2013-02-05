@@ -186,11 +186,13 @@ static void build_key_translation_table () {
     keyTranslation [63237] = KEY_MENU;   // F2 to MENU
     keyTranslation [63238] = KEY_BACK;   // F3 to BACK
     keyTranslation [63239] = KEY_SEARCH; // F4 to SEARCH
+    keyTranslation [63240] = KEY_POWER;  // F5 to POWER
     
     keyTranslation [61374] = KEY_HOME;   // F1 to HOME
     keyTranslation [61375] = KEY_MENU;   // F2 to MENU
     keyTranslation [61376] = KEY_BACK;   // F3 to BACK
     keyTranslation [61377] = KEY_SEARCH; // F4 to SEARCH
+    keyTranslation [61378] = KEY_POWER;  // F5 to POWER
 }
 
 static inline int keycode (int key) {
