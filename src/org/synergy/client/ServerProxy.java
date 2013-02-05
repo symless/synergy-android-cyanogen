@@ -231,7 +231,8 @@ public class ServerProxy {
 			break;
 
 		case CSCREENSAVER:
-			screensaver (new ScreenSaverMessage (din));
+			byte screenSaverOnFlag = din.readByte();
+			screensaver (new ScreenSaverMessage (din, screenSaverOnFlag));
 			break;
 
 		case QINFO:
