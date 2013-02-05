@@ -19,6 +19,10 @@
  */
 package org.synergy.io.msgs;
 
+/**
+ * For more information on the Synergy message format, see 
+ * http://synergy-foss.org/code/filedetails.php?repname=synergy&path=%2Ftrunk%2Fsrc%2Flib%2Fsynergy%2FProtocolTypes.cpp
+ */
 public enum MessageType {
     HELLO ("Synergy", "[Init] Hello"),           // Not a standard message
     HELLOBACK ("Synergy", "[Init] Hello Back"),  // Not a standard message
