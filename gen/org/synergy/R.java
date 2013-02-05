@@ -16,8 +16,10 @@ public final class R {
     public static final class id {
         public static final int clientNameEditText=0x7f050001;
         public static final int clientNameTextView=0x7f050000;
-        public static final int connectButton=0x7f050004;
-        public static final int outputEditText=0x7f050005;
+        public static final int connectButton=0x7f050006;
+        public static final int inputDeviceEditText=0x7f050005;
+        public static final int inputDeviceTextView=0x7f050004;
+        public static final int outputEditText=0x7f050007;
         public static final int serverHostEditText=0x7f050003;
         public static final int serverHostTextView=0x7f050002;
     }
