@@ -1,0 +1,12 @@
+Synergy Android Client
+Version:       0.0004 Alpha
+Release Date:  2013-02-10
+
+This is an "alpha" quality release of the Synergy Android Client.
+
+It incorporates the following fixes:
+
+* Show mouse pointer on newer Android devices
+* Reduce mouse lag
+* Assign power button to F5
+* Fix disconnect issue when Synergy server sends a Screen Saver event
