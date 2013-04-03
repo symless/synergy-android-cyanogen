@@ -113,6 +113,8 @@ public class Synergy extends Activity {
     	
     	String clientName = ((EditText) findViewById (R.id.clientNameEditText)).getText().toString();
     	String ipAddress = ((EditText) findViewById (R.id.serverHostEditText)).getText().toString();
+    	String portStr = ((EditText) findViewById(R.id.serverPortEditText)).getText().toString();
+    	int port = Integer.parseInt(portStr);
     	String deviceName = ((EditText) findViewById(R.id.inputDeviceEditText)).getText().toString();
     	
     	SharedPreferences preferences = getPreferences(MODE_PRIVATE);
@@ -124,7 +126,7 @@ public class Synergy extends Activity {
     	
         try {
         	SocketFactoryInterface socketFactory = new TCPSocketFactory();
-       	   	NetworkAddress serverAddress = new NetworkAddress (ipAddress, 24800);
+       	   	NetworkAddress serverAddress = new NetworkAddress (ipAddress, port);
         	serverAddress.resolve ();
 
         	Injection.startInjection(deviceName);

@@ -30,8 +30,22 @@
 
     <TextView android:layout_width="fill_parent" 
               android:layout_height="wrap_content" 
+              android:text="Server Port:"
+              android:layout_below="@id/serverHostEditText"
+              android:id="@+id/serverPortTextView"/>
+
+    <EditText android:id="@+id/serverPortEditText"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:layout_below="@id/serverPortTextView"
+              android:background="@android:drawable/editbox_background"
+              android:inputType="number"
+              android:text="24800" />
+
+    <TextView android:layout_width="fill_parent" 
+              android:layout_height="wrap_content" 
               android:text="Input device name:"
-              android:layout_below="@+id/serverHostEditText"
+              android:layout_below="@+id/serverPortEditText"
               android:id="@+id/inputDeviceTextView"/>
 
     <EditText android:layout_width="fill_parent" 
@@ -70,8 +84,7 @@
 <!--    </LinearLayout>-->
 <!--</TabHost>-->
 <!--    -->
-	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="fill_parent" 
+    <LinearLayout android:layout_width="fill_parent" 
                 android:layout_height="fill_parent"
                 android:layout_below="@id/connectButton">
     	
