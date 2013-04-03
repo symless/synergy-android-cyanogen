@@ -141,7 +141,7 @@ public class Synergy extends Activity {
             
             Log.debug ("Hostname: " + clientName);
             
-			Client client = new Client (clientName, serverAddress, socketFactory, null, basicScreen);
+			Client client = new Client (getApplicationContext(), clientName, serverAddress, socketFactory, null, basicScreen);
 			client.connect ();
 
 			if (mainLoopThread == null) {
