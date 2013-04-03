@@ -31,6 +31,8 @@ import org.synergy.base.EventType;
 
 public class TCPSocket implements DataSocketInterface {
 
+	private static final int SOCKET_CONNECTION_TIMEOUT_IN_MILLIS = 1000;
+
     private Socket socket;
 
     private boolean connected = false;
@@ -88,7 +90,8 @@ public class TCPSocket implements DataSocketInterface {
     	throws IOException 
     {
         // TODO
-        socket.connect (new InetSocketAddress (address.getAddress (), address.getPort ()));
+        socket.connect (new InetSocketAddress (address.getAddress (), address.getPort ()),
+                SOCKET_CONNECTION_TIMEOUT_IN_MILLIS);
 
         // Turn off Nagle's algorithm and set traffic type (RFC 1349) to minimize delay
         // to avoid mouse pointer "lagging"
