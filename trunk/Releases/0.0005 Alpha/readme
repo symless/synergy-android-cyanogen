@@ -1,0 +1,10 @@
+Synergy Android Client
+Version:       0.0005 Alpha
+Release Date:  2013-04-06
+
+This is an "alpha" quality release of the Synergy Android Client.
+
+It incorporates the following fixes:
+
+* Now displays a message to indicate whether the connection was successful or not
+* Added a new Synergy server port field in the connection details
