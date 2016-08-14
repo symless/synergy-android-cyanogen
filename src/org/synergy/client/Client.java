@@ -22,7 +22,8 @@ package org.synergy.client;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-
+import java.util.Timer;
+import java.util.TimerTask;
 import org.synergy.base.Event;
 import org.synergy.base.EventJobInterface;
 import org.synergy.base.EventQueue;
@@ -43,63 +44,69 @@ import org.synergy.net.SocketFactoryInterface;
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Toast;
 
 public class Client implements EventTarget {
-	
-	private final Context context;
-	private String name;
-	private NetworkAddress serverAddress;
-	private Stream stream;
-	private SocketFactoryInterface socketFactory;
-	private StreamFilterFactoryInterface streamFilterFactory;
-	private ScreenInterface screen;
-	
-	private int mouseX;
-	private int mouseY;
-	
-	private ServerProxy server;
 
-	public Client (final Context context, final String name, final NetworkAddress serverAddress,
-			SocketFactoryInterface socketFactory, StreamFilterFactoryInterface streamFilterFactory,
-			ScreenInterface screen) {
-		
-		this.context = context;
-		this.name = name;
-		this.serverAddress = serverAddress;
-		this.socketFactory = socketFactory;
-		this.streamFilterFactory = streamFilterFactory;
-		this.screen = screen;
-		
+
+    private final Context context;
+    //private final TimerTask autoReconnectTask;
+    private String name;
+    private NetworkAddress serverAddress;
+    private Stream stream;
+    private SocketFactoryInterface socketFactory;
+    private StreamFilterFactoryInterface streamFilterFactory;
+    private ScreenInterface screen;
+    private Handler handler;
+    private int mouseX;
+    private int mouseY;
+    private int reconnectAttemptsCount;
+    private boolean autoReconnect;
+    private ServerProxy server;
+
+    public Client (final Context context, final String name, final NetworkAddress serverAddress,
+                   SocketFactoryInterface socketFactory, StreamFilterFactoryInterface streamFilterFactory,
+                   ScreenInterface screen, boolean autoReconnect) {
+
+        this.context = context;
+        this.name = name;
+        this.serverAddress = serverAddress;
+        this.socketFactory = socketFactory;
+        this.streamFilterFactory = streamFilterFactory;
+        this.screen = screen;
+        this.autoReconnect = autoReconnect;
+        this.handler = new Handler(Looper.getMainLooper());
+        this.reconnectAttemptsCount = 0;
         assert (socketFactory != null);
         assert (screen != null);
-
         // TODO register suspend / resume event handlers
-	}
-	
-	public void finalize () throws Throwable {
-	    // TODO
-	}
-	
-	public void connect () {
+    }
+
+    public void finalize () throws Throwable {
+        // TODO
+    }
+
+    public void connect () {
         if (stream != null) {
             Log.info ("stream != null");
             return;
         }
 
-		try {
-			serverAddress.resolve ();
-			
-			if (serverAddress.getAddress () != null) {
-				Log.debug ("Connecting to: '" +
-						serverAddress.getHostname () + "': " +
-						serverAddress.getAddress () + ":" +
-						serverAddress.getPort ());
-			}
-			
+        try {
+            serverAddress.resolve ();
+
+            if (serverAddress.getAddress () != null) {
+                Log.debug ("Connecting to: '" +
+                        serverAddress.getHostname () + "': " +
+                        serverAddress.getAddress () + ":" +
+                        serverAddress.getPort ());
+            }
+
             // create the socket
-	        DataSocketInterface socket = socketFactory.create ();
-    
+            DataSocketInterface socket = socketFactory.create ();
+
             // filter socket messages, including a packetizing filter
             stream = socket;
             if (streamFilterFactory != null) {
@@ -107,52 +114,70 @@ public class Client implements EventTarget {
             }
 
             // connect
-            Log.debug ("connecting to server");
+            Log.debug("connecting to server");
 
-            setupConnecting ();
-            setupTimer ();
+            setupConnecting();
+            setupTimer();
 
-            socket.connect (serverAddress);
-            
-            final Toast toast = Toast.makeText(context, "Connected to " + serverAddress.getHostname()
-                    + ":" + serverAddress.getPort(), Toast.LENGTH_SHORT);
-            toast.show();
-		} catch (IOException e) {
-			final String errorMessage = "Failed to connect to " + serverAddress.getHostname()
-					+ ":" + serverAddress.getPort();
-			Log.error(errorMessage);
-			final Toast toast = Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT);
-			toast.show();
-		}
-	}
-	
-	public void disconnect (String msg) {
-		cleanupTimer ();
-		cleanupScreen ();
-		cleanupConnecting ();
-		if (msg != null) {
-			sendConnectionFailedEvent (msg);
-		} else {
-			sendEvent (EventType.CLIENT_DISCONNECTED, null);
-		}
-	}
-		
+            socket.connect(serverAddress);
+            sendMessage("Connected to " + serverAddress.getHostname()
+                    + ":" + serverAddress.getPort());
+        } catch (IOException e) {
+            final String errorMessage = "Failed to connect to " + serverAddress.getHostname()
+                    + ":" + serverAddress.getPort();
+            Log.error(errorMessage);
+            sendMessage(errorMessage);
+            handleConnectionFailed();
+        }
+    }
+
+    public void setAutoReconnect(Boolean newVal) {
+        Log.debug ("setting auto-reconnect value: "+newVal);
+        autoReconnect = newVal;
+        if (autoReconnect)
+        {
+            EventQueue.getInstance ().addEvent (new Event (EventType.CLIENT_RECONNECT_ENABLED, this));
+        }
+        else
+        {
+            EventQueue.getInstance ().addEvent (new Event (EventType.CLIENT_RECONNECT_DISABLED, this));
+        }
+    }
+
+    public boolean getAutoReconnect() {
+        return autoReconnect;
+    }
+
+    public void disconnect (String msg) {
+        cleanupTimer();
+        cleanupScreen();
+        cleanupConnecting ();
+        Log.info ("Client disconnect..."+msg);
+        if (msg != null) {
+            sendConnectionFailedEvent (msg);
+        } else {
+            sendEvent(EventType.CLIENT_DISCONNECTED, null);
+        }
+    }
+
     private void setupConnecting () {
         assert (stream != null);
 
         EventQueue.getInstance().adoptHandler(EventType.SOCKET_CONNECTED, stream.getEventTarget(),
-        		new EventJobInterface () { 
-        			public void run (Event event) {
-        				handleConnected();
-        			}});
-        
-        EventJobInterface job = EventQueue.getInstance().getHandler(EventType.SOCKET_CONNECTED, stream.getEventTarget());
-        
+                new EventJobInterface() {
+                    public void run(Event event) {
+                        handleConnected();
+                    }
+                });
+
+        //EventJobInterface job = EventQueue.getInstance().getHandler(EventType.SOCKET_CONNECTED, stream.getEventTarget());
+
         EventQueue.getInstance().adoptHandler(EventType.SOCKET_CONNECT_FAILED, stream.getEventTarget(),
-        		new EventJobInterface () {
-        			public void run (Event event) {
-        				handleConnectionFailed();
-        			}});
+                new EventJobInterface() {
+                    public void run(Event event) {
+                        handleConnectionFailed();
+                    }
+                });
     }
 
     private void cleanupConnecting () {
@@ -168,26 +193,52 @@ public class Client implements EventTarget {
 
 
     }
-    
+
     private void handleConnected () {
-    	Log.debug1 ("connected; wait for hello");
+        Log.debug1 ("connected; wait for hello");
 
         cleanupConnecting ();
         setupConnection ();
 
         // TODO Clipboard
     }
-    
+
     private void handleConnectionFailed () {
         // TODO
+        Log.debug("handleConnectionFailed");
+        handleDisconnected();
     }
-    
+
     private void handleDisconnected () {
-    	// TODO
+        // TODO
+        Log.debug("handleDisconnected");
+        if (autoReconnect)
+        {
+            if (stream != null)
+            {
+                //if (stream.isReady()) stream.close();
+                stream = null;
+            }
+            final long reconnectDelay = 3000L + (reconnectAttemptsCount * 2000L);
+            reconnectAttemptsCount += 1;
+            sendMessage("("+reconnectAttemptsCount+"/5) Reconnect in "+((int) (reconnectDelay/1000))+" secs...");
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    Log.debug ("autoReconnectTask - attemps count: "+reconnectAttemptsCount);
+                    Log.debug("autoReconnectTask - delay time: "+reconnectDelay);
+                    if (reconnectAttemptsCount == 5)
+                    {
+                        setAutoReconnect(false);
+                    }
+                    connect();
+                }
+            }, reconnectDelay);
+        }
     }
 
     private void handleHello () {
-        Log.debug ("handling hello");
+        Log.debug("handling hello");
 
         try {
             // Read in the Hello Message
@@ -195,9 +246,9 @@ public class Client implements EventTarget {
             HelloMessage helloMessage = new HelloMessage (din);
 
             Log.debug1 ("Read hello message: " + helloMessage);
-            
+
             // TODO check versions
-            
+
             // say hello back
             DataOutputStream dout = new DataOutputStream (stream.getOutputStream ());
 
@@ -223,32 +274,37 @@ public class Client implements EventTarget {
     private void handleOutputError () {
     }
 
-    
-	private void setupConnection () {
-        assert (stream != null);
 
+    private void setupConnection () {
+        assert (stream != null);
         EventQueue.getInstance().adoptHandler(EventType.SOCKET_DISCONNECTED, stream.getEventTarget(),
-        		new EventJobInterface () { public void run (Event event) {
-        				handleDisconnected ();
-        			}});
+                new EventJobInterface () { public void run (Event event) {
+                    handleDisconnected();
+                }});
+        EventQueue.getInstance().adoptHandler(EventType.CLIENT_DISCONNECTED, this,
+                new EventJobInterface() {
+                    public void run(Event event) {
+                        handleDisconnected();
+                    }
+                });
 
         EventQueue.getInstance().adoptHandler(EventType.STREAM_INPUT_READY, stream.getEventTarget(),
-        		new EventJobInterface () { public void run (Event event) {
-        				handleHello ();
-        			}});
+                new EventJobInterface () { public void run (Event event) {
+                    handleHello();
+                }});
 
         EventQueue.getInstance().adoptHandler(EventType.STREAM_OUTPUT_ERROR, stream.getEventTarget(),
-        		new EventJobInterface () { public void run (Event event) {
-        				handleDisconnected ();
-        			}});
+                new EventJobInterface () { public void run (Event event) {
+                    handleDisconnected ();
+                }});
         EventQueue.getInstance().adoptHandler(EventType.STREAM_INPUT_SHUTDOWN, stream.getEventTarget(),
-        		new EventJobInterface () { public void run (Event event) {
-        				handleDisconnected ();
-        			}});
+                new EventJobInterface () { public void run (Event event) {
+                    handleDisconnected ();
+                }});
         EventQueue.getInstance().adoptHandler(EventType.STREAM_OUTPUT_SHUTDOWN, stream.getEventTarget(),
-        		new EventJobInterface () { public void run (Event event) {
-        				handleDisconnected ();
-        			}});
+                new EventJobInterface () { public void run (Event event) {
+                    handleDisconnected ();
+                }});
     }
 
     private void setupScreen () {
@@ -256,11 +312,11 @@ public class Client implements EventTarget {
         assert (screen == null);
 
         server = new ServerProxy (this, stream);
-        
-        EventQueue.getInstance().adoptHandler(EventType.SHAPE_CHANGED, getEventTarget (),
-        		new EventJobInterface () { public void run (Event event) {
-        				handleShapeChanged ();
-        			}});
+
+        EventQueue.getInstance().adoptHandler(EventType.SHAPE_CHANGED, getEventTarget(),
+                new EventJobInterface () { public void run (Event event) {
+                    handleShapeChanged();
+                }});
         // TODO Clipboard
 //        EventQueue.getInstance().adoptHandler(Stream.getInputShutdownEvent(), stream.getEventTarget(),
 //        		new EventJobInterface () { public void run (Event event) {
@@ -271,9 +327,9 @@ public class Client implements EventTarget {
     private void cleanupTimer () {
         // TODO
     }
-    
+
     private void cleanupScreen () {
-    	// TODO/
+        // TODO/
     }
 
     public Object getEventTarget () {
@@ -290,9 +346,9 @@ public class Client implements EventTarget {
     }
 
     public Point getCursorPos () {
-        return screen.getCursorPos ();
+        return screen.getCursorPos();
     }
-	
+
 
     public void handshakeComplete () {
         screen.enable ();
@@ -300,13 +356,23 @@ public class Client implements EventTarget {
     }
 
     private void sendEvent (EventType type, Object data) {
-        EventQueue.getInstance ().addEvent (new Event (type, data));
+        EventQueue.getInstance ().addEvent(new Event(type, this));
     }
 
     private void sendConnectionFailedEvent (String msg) {
-    	// TODO
+        // TODO
+        sendEvent(EventType.CLIENT_DISCONNECTED, msg);
     }
-    
+
+    private void sendMessage (final String msg) {
+        handler.post(new Runnable() {
+            @Override
+            public void run()
+            {
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 
     /*
     private Integer getConnectedEvent () {
@@ -327,19 +393,19 @@ public class Client implements EventTarget {
 
 
     public void enter (EnterMessage enterMessage) {
-    	mouseX = enterMessage.getX ();
-    	mouseY = enterMessage.getY ();
+        mouseX = enterMessage.getX ();
+        mouseY = enterMessage.getY ();
         screen.mouseMove (mouseX, mouseY);
         screen.enter ((int)enterMessage.getMask ());
     }
-    
+
     public void leave (LeaveMessage leaveMessage) {
-    	// Since I don't know how to hide the cursor, tuck it away out of sight
-    	screen.mouseMove (screen.getShape ().right, screen.getShape ().bottom);
+        // Since I don't know how to hide the cursor, tuck it away out of sight
+        screen.mouseMove (screen.getShape ().right, screen.getShape ().bottom);
     }
 
     public void mouseMove (int x, int y) {
-    	screen.mouseMove (x, y);    	
+        screen.mouseMove (x, y);
     }
 
     public void mouseDown (int buttonID) {
@@ -349,34 +415,34 @@ public class Client implements EventTarget {
     public void mouseUp (int buttonID) {
         screen.mouseUp (buttonID);
     }
-    
+
     public void relMouseMove (int x, int y) {
-    	screen.mouseRelativeMove (x, y);
+        screen.mouseRelativeMove (x, y);
     }
-    
+
     public void mouseWheel (int x, int y) {
-    	screen.mouseWheel(x, y);
+        screen.mouseWheel(x, y);
     }
-    
+
     /**
      * @param keyEventID A VK_ defined in KeyEvent
      */
     public void keyDown (int keyEventID, int mask, int button) {
-       screen.keyDown (keyEventID, mask, button);
+        screen.keyDown (keyEventID, mask, button);
     }
-    
+
     /**
      * @param keyEventID A VK_ defined in KeyEvent
      */
     public void keyRepeat (int keyEventID, int mask, int button) {
-    	screen.keyDown (keyEventID, mask, button);
+        screen.keyDown (keyEventID, mask, button);
     }
-    
+
     /**
      * @param keyEventID A VK_ defined in KeyEvent
      */
-   public void keyUp (int keyEventID, int mask, int button) {
-   	screen.keyUp (keyEventID, mask, button);
-   }
+    public void keyUp (int keyEventID, int mask, int button) {
+        screen.keyUp (keyEventID, mask, button);
+    }
 
 }
