@@ -101,6 +101,9 @@ int suinput_open(const char* device_name, const struct input_id* id)
 
   /* Configure device to handle all keys, see linux/input.h. */
   for (i = 0; i < KEY_MAX; i++) {
+      if (i == BTN_TOUCH) {
+          continue;
+      }
     if (ioctl(uinput_fd, UI_SET_KEYBIT, i) == -1) {
       goto err;
      }
